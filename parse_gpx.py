@@ -18,14 +18,14 @@ COLUMN_NAMES = ['latitude', 'longitude', 'elevation', 'time', 'heart_rate', 'cad
 
 def get_gpx_point_data(point: gpxpy.gpx.GPXTrackPoint) -> Dict[str, Union[float, datetime, int]]:
         """Return a tuple containing some key data about `point`."""
-        
+
         data = {
             'latitude': point.latitude,
             'longitude': point.longitude,
             'elevation': point.elevation,
             'time': point.time
         }
-    
+
         # Parse extensions for heart rate and cadence data, if available
         elem = point.extensions[0]  # Assuming we know there is only one extension
         try:
@@ -33,7 +33,7 @@ def get_gpx_point_data(point: gpxpy.gpx.GPXTrackPoint) -> Dict[str, Union[float,
         except AttributeError:
             # "text" attribute not found, so data not available
             pass
-            
+
         try:
             data['cadence'] = int(elem.find('garmin_tpe:cad', NAMESPACES).text)
         except AttributeError:
