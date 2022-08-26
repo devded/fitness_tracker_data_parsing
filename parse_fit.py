@@ -22,35 +22,33 @@ def get_fit_lap_data(frame: fitdecode.records.FitDataMessage) -> Dict[str, Union
     """Extract some data from a FIT frame representing a lap and return
     it as a dict.
     """
-    
-    data: Dict[str, Union[float, datetime, timedelta, int]] = {}
-    
-    for field in LAPS_COLUMN_NAMES[1:]:  # Exclude 'number' (lap number) because we don't get that
-                                        # from the data but rather count it ourselves
-        if frame.has_field(field):
-            data[field] = frame.get_value(field)
-    
-    return data
+
+    return {
+        field: frame.get_value(field)
+        for field in LAPS_COLUMN_NAMES[1:]
+        if frame.has_field(field)
+    }
 
 def get_fit_point_data(frame: fitdecode.records.FitDataMessage) -> Optional[Dict[str, Union[float, int, str, datetime]]]:
     """Extract some data from an FIT frame representing a track point
     and return it as a dict.
     """
-    
+
     data: Dict[str, Union[float, int, str, datetime]] = {}
-    
-    if not (frame.has_field('position_lat') and frame.has_field('position_long')):
+
+    if not frame.has_field('position_lat') or not frame.has_field(
+        'position_long'
+    ):
         # Frame does not have any latitude or longitude data. We will ignore these frames in order to keep things
         # simple, as we did when parsing the TCX file.
         return None
-    else:
-        data['latitude'] = frame.get_value('position_lat') / ((2**32) / 360)
-        data['longitude'] = frame.get_value('position_long') / ((2**32) / 360)
-    
+    data['latitude'] = frame.get_value('position_lat') / ((2**32) / 360)
+    data['longitude'] = frame.get_value('position_long') / ((2**32) / 360)
+
     for field in POINTS_COLUMN_NAMES[3:]:
         if frame.has_field(field):
             data[field] = frame.get_value(field)
-    
+
     return data
     
 
@@ -76,14 +74,14 @@ def get_dataframes(fname: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
                     single_lap_data['number'] = lap_no
                     laps_data.append(single_lap_data)
                     lap_no += 1
-    
+
     # Create DataFrames from the data we have collected. If any information is missing from a particular lap or track
     # point, it will show up as a null value or "NaN" in the DataFrame.
-    
+
     laps_df = pd.DataFrame(laps_data, columns=LAPS_COLUMN_NAMES)
     laps_df.set_index('number', inplace=True)
     points_df = pd.DataFrame(points_data, columns=POINTS_COLUMN_NAMES)
-    
+
     return laps_df, points_df
 
 if __name__ == '__main__':
